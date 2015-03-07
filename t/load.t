@@ -4,9 +4,9 @@ use warnings;
 use Test::More;
 
 for (qw(
-
+  AnyEvent::ITM
 )) {
-use_ok($_);
+  use_ok($_);
 }
 
 done_testing;

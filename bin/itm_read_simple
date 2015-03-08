@@ -84,10 +84,14 @@ warn $cv->recv;
 
   itm_read_simple openocd.itmlog
 
-In the openocd.cfg
+In the openocd.cfg (for a 72MHz ARM)
 
   itm ports on
   tpiu config internal openocd.itmlog uart off 72000000
+
+Best is to make a fifo for the exchange (more stable)
+
+  mkfifo openocd.itmlog
 
 =head1 DESCRIPTION
 

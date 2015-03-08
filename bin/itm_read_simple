@@ -77,3 +77,31 @@ sub create_handle {
 }
 
 warn $cv->recv;
+
+=encoding utf8
+
+=head1 SYNOPSIS
+
+  itm_read_simple openocd.itmlog
+
+In the openocd.cfg
+
+  itm ports on
+  tpiu config internal openocd.itmlog uart off 72000000
+
+=head1 DESCRIPTION
+
+Displays ITM/SWO Debugging data in colored form.
+
+=head1 SUPPORT
+
+Repository
+
+  https://github.com/Getty/p5-anyevent-itm
+  Pull request and additional contributors are welcome
+ 
+Issue Tracker
+
+  https://github.com/Getty/p5-anyevent-itm/issues
+
+=cut

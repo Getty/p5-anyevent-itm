@@ -7,8 +7,44 @@ use warnings;
 use AnyEvent;
 use AnyEvent::Handle;
 use AnyEvent::ITM;
+use Term::ANSIColor qw( colored );
 
 $|=1;
+
+our @colors = (
+  'bright_white on_black',
+  'bright_yellow on_black',
+  'bright_green on_black',
+  'bright_cyan on_black',
+  'bright_blue on_black',
+  'bright_red on_black',
+  'bright_magenta on_black',
+  'bright_white on_blue',
+  'bright_yellow on_blue',
+  'bright_green on_blue',
+  'bright_cyan on_blue',
+  'bright_red on_blue',
+  'bright_magenta on_blue',
+  'bright_black on_red',
+  'bright_white on_red',
+  'bright_yellow on_red',
+  'bright_green on_red',
+  'bright_green on_red',
+  'bright_cyan on_red',
+  'blue on_red',
+  'bright_black on_green',
+  'blue on_green',
+  'bright_red on_green',
+  'bright_magenta on_green',
+  'bright_black on_magenta',
+  'bright_white on_magenta',
+  'bright_yellow on_magenta',
+  'bright_green on_magenta',
+  'bright_cyan on_magenta',
+  'blue on_magenta',
+  'black on_bright_white',
+  'blue on_bright_white',
+);
 
 my $file = shift or die qq{usage: $0 filename};
 open my $fh, '<', $file or die qq{can't open file: $file};
@@ -34,7 +70,7 @@ sub create_handle {
     $handle->push_read(itm => sub {
       my ($handle, $itm) = @_;
       if (ref $itm eq 'ITM::Instrumentation') {
-        print $itm->payload;
+        print colored($itm->payload,$colors[$itm->source]);
       }
     });
   };

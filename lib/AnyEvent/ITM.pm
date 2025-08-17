@@ -5,9 +5,12 @@ use strict;
 use warnings;
 use bytes;
 
+use AnyEvent;
 use AnyEvent::Handle;
 use Carp qw( croak );
 use ITM;
+use Fcntl qw(O_RDONLY O_RDWR O_NONBLOCK O_NOCTTY);
+use AnyEvent::Util qw(run_cmd portable_pipe);
 
 AnyEvent::Handle::register_read_type(itm => sub {
   my ( $self, $cb ) = @_;
@@ -35,11 +38,139 @@ AnyEvent::Handle::register_read_type(itm => sub {
   };
 });
 
+sub _ts {
+  my @t = localtime;
+  return sprintf "%04d-%02d-%02d %02d:%02d:%02d",
+    $t[5]+1900, $t[4]+1, $t[3], $t[2], $t[1], $t[0];
+}
+
+sub _print_ts {
+  my ( $label, $line ) = @_;
+  chomp $line;
+  if ($label eq '2>') {
+    print STDERR _ts()." $label $line\n";
+  } else {
+    print STDOUT _ts()." $label $line\n";
+  }
+};
+
+sub handle {
+  my ( $class, $file, $payload_sub, $cv ) = @_;
+
+  my $has_cv = defined $cv ? 1 : 0;
+
+  $cv = AE::cv unless $has_cv;
+
+  # Choose flags so open won't block
+  my $flags;
+  if (-p $file) {
+    $flags = O_RDWR | O_NONBLOCK;
+  } else {
+    $flags = O_RDONLY | O_NONBLOCK;
+    $flags |= O_NOCTTY if -c $file;
+  }
+
+  sysopen(my $fh, $file, $flags) or die "sysopen $file: $!";
+  binmode($fh, ':raw');
+
+  my $handle = AnyEvent::Handle->new(
+    fh => $fh,
+    on_error => sub {
+      my ( $handle, $fatal, $message ) = @_;
+      $handle->destroy;
+      $cv->send("$fatal: $message");
+    },
+    on_eof => sub {
+      my ( $handle ) = @_;
+      $handle->destroy;
+      $cv->send("EOF");
+    },
+    on_read => sub {
+      my $handle = shift;
+      $handle->push_read( itm => $payload_sub );
+    },
+  );
+
+  $cv->recv unless $has_cv;
+
+  return $handle;
+}
+
+sub _run_cmd {
+  my ($class, @cmd) = @_;
+  die "run_cmd: no command" unless @cmd;
+
+  my ($out_r, $out_w) = portable_pipe;
+  my ($err_r, $err_w) = portable_pipe;
+
+  my $proc = run_cmd \@cmd, '>' => $out_w, '2>' => $err_w, close_all => 1;
+
+  close $out_w;
+  close $err_w;
+
+  my %cmd = (
+    cv   => AE::cv,
+    proc => $proc,
+  );
+
+  $cmd{hout} = AnyEvent::Handle->new(
+    fh      => $out_r,
+    on_read => sub {
+      my ($h) = @_;
+      $h->push_read(line => sub {
+        my ($h, $line) = @_;
+        _print_ts('>', $line);
+      });
+    },
+    on_eof   => sub { shift->destroy },
+    on_error => sub { shift->destroy },
+  );
+
+  $cmd{herr} = AnyEvent::Handle->new(
+    fh      => $err_r,
+    on_read => sub {
+      my ($h) = @_;
+      $h->push_read(line => sub {
+        my ($h, $line) = @_;
+        _print_ts('2>', $line);
+      });
+    },
+    on_eof   => sub { shift->destroy },
+    on_error => sub { shift->destroy },
+  );
+
+  $proc->cb(sub {
+    my $raw = shift->recv;                 # like $?
+    my $code = ($raw >> 8) & 0xff;
+    my $sig  = $raw & 0x7f;
+    $cmd{exit_code} = $code;
+    $cmd{signal}    = $sig if $sig;
+    $cmd{cv}->send($code);
+  });
+
+  return \%cmd;  # keep this in scope; wait via $obj->{cv}->recv
+}
+
 1;
 
 =head1 SYNOPSIS
 
+  my $cv = AE::cv;
+  my $handle = AnyEvent::ITM->handle($file, sub {
+    my ( $handle, $itm ) = @_;
+    if (ref $itm eq 'ITM::Instrumentation') {
+      printf("[%u]%s", $itm->source, $itm->payload);
+    }
+  }, $cv);
+  $cv->recv;
+
+or without $cv, it will start its own and does $cv->recv on its own.
+
+  AnyEvent::ITM->handle($file, sub { ... });
+
 =head1 DESCRIPTION
+
+Process ITM/SWO Debugging data.
 
 =head1 SUPPORT
 

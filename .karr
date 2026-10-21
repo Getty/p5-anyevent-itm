@@ -1,0 +1,3 @@
+claude: true
+prompt: |
+  Drain the AnyEvent-ITM karr board. A debug deserializer for ITM and SWD streams on top of AnyEvent. Delegate behaviour-relevant code to the anyevent-itm-worker agent and release audits to anyevent-itm-release-manager; follow .claude/rules/anyevent-itm-rules.md. Never release.

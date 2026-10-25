@@ -1,0 +1,46 @@
+---
+claimed_at: 2026-10-25T06:00:30Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:30Z
+created: 2026-10-21T02:29:37Z
+id: 4
+priority: medium
+started: 2026-10-25T05:53:10Z
+status: done
+tags:
+- dist
+- release
+title: 'dzil build bricht ab: keine LICENSE, kein Changes, kein README, cpanfile pinnt
+  auf Null'
+updated: 2026-10-25T06:00:30Z
+---
+
+Der Build dieser Dist laeuft nicht durch. Belege und Ursachen:
+
+  1) dzil build bricht mit 'no LICENSE in the distribution' ab. Die LICENSE fehlt
+     im Repository. Sie wird per dzil genlicense erzeugt und muss danach ausdruecklich
+     eingetragen werden - das Bundle sammelt nur eingetragene Dateien.
+  2) Es gibt keine Changes-Datei. Das Hausformat verlangt eine Changes im
+     CPAN-Format mit einem Abschnitt fuer die naechste, noch nicht veroeffentlichte
+     Version.
+  3) Es gibt keine README.md.
+  4) Die cpanfile pinnt AnyEvent und ITM auf die Version '0'. Die Hausregel
+     verbietet den Wert '0' - er pinnt nichts und schliesst jede echte Version aus.
+     ITM laesst sich erst pinnen, wenn diese Dist selbst eine Version traegt
+     (siehe Karte zur Versionsangabe).
+  5) Die cpanfile laesst Carp und Fcntl undeclared, obwohl das Modul sie benutzt.
+  6) Term::ANSIColor wird von bin/itm_read_simple importiert, steht aber in keiner
+     Abhaengigkeitsliste - der Import ist toter Code und gehoert in die Worker-Karte,
+     nicht ins cpanfile.
+  7) bundle.bat ruft pp (PAR::Packer) auf - nirgends deklariert: nicht in der
+     cpanfile, nicht in dist.ini. Entweder als Entwickler-Hilfe in der on-develop-
+     Sektion der cpanfile deklarieren, oder das Skript ersetzen.
+  8) Die author-Zeile in dist.ini nennt torsten@raudssus, waehrend die neueren Dists
+     der Flotte torsten@raudssus.de verwenden. Das ist eine Entscheidung des
+     Maintainers, keine stille Aenderung.
+
+Arbeitsaufteilung: Punkte 1 bis 3 und 7 bis 8 gehoeren in die Release-Rolle, Punkte
+4 bis 6 sind Handarbeit an der cpanfile.
+
+2026-10-25 05:54 Committed 9372b11. dzil build laeuft sauber durch. Abweichung: dist.ini author lautet torsten@raudss.us, die Karte nennt torsten@raudssus (und raudssus.de als Flotten-Adresse); NICHT geaendert. Frage an Maintainer: welche Adresse erwartet der CPAN-Account? Pins: ITM 0.002 ist auf CPAN (cpanm --info), AnyEvent 7.17 = gemessene installierte Version, nicht auf noetige Mindestversion geprueft. Term::ANSIColor: grep in lib/ bin/ leer.

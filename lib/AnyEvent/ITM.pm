@@ -10,7 +10,7 @@ use AnyEvent::Handle;
 use Carp qw( croak );
 use ITM;
 use Fcntl qw(O_RDONLY O_RDWR O_NONBLOCK O_NOCTTY);
-use AnyEvent::Util qw(run_cmd portable_pipe);
+use AnyEvent::Util qw(portable_pipe);
 
 AnyEvent::Handle::register_read_type(itm => sub {
   my ( $self, $cb ) = @_;
@@ -44,7 +44,7 @@ sub _ts {
     $t[5]+1900, $t[4]+1, $t[3], $t[2], $t[1], $t[0];
 }
 
-sub _print_ts {
+sub print_ts {
   my ( $label, $line ) = @_;
   chomp $line;
   if ($label eq '2>') {
@@ -53,6 +53,17 @@ sub _print_ts {
     print STDOUT _ts()." $label $line\n";
   }
 };
+
+=method print_ts
+
+  AnyEvent::ITM::print_ts('>', $line);
+
+Prints C<$line> prefixed with the local time (C<YYYY-MM-DD HH:MM:SS>) and
+C<$label>, one line per call (a trailing newline of C<$line> is removed). The
+label C<2E<gt>> prints to STDERR, every other label to STDOUT. This is a plain
+function, not a method.
+
+=cut
 
 sub handle {
   my ( $class, $file, $payload_sub, $cv ) = @_;
@@ -96,14 +107,14 @@ sub handle {
   return $handle;
 }
 
-sub _run_cmd {
+sub run_cmd {
   my ($class, @cmd) = @_;
   die "run_cmd: no command" unless @cmd;
 
   my ($out_r, $out_w) = portable_pipe;
   my ($err_r, $err_w) = portable_pipe;
 
-  my $proc = run_cmd \@cmd, '>' => $out_w, '2>' => $err_w, close_all => 1;
+  my $proc = AnyEvent::Util::run_cmd \@cmd, '>' => $out_w, '2>' => $err_w, close_all => 1;
 
   close $out_w;
   close $err_w;
@@ -119,7 +130,7 @@ sub _run_cmd {
       my ($h) = @_;
       $h->push_read(line => sub {
         my ($h, $line) = @_;
-        _print_ts('>', $line);
+        print_ts('>', $line);
       });
     },
     on_eof   => sub { shift->destroy },
@@ -132,7 +143,7 @@ sub _run_cmd {
       my ($h) = @_;
       $h->push_read(line => sub {
         my ($h, $line) = @_;
-        _print_ts('2>', $line);
+        print_ts('2>', $line);
       });
     },
     on_eof   => sub { shift->destroy },
@@ -150,6 +161,25 @@ sub _run_cmd {
 
   return \%cmd;  # keep this in scope; wait via $obj->{cv}->recv
 }
+
+=method run_cmd
+
+  my $cmd = AnyEvent::ITM->run_cmd(@command);
+  my $exit_code = $cmd->{cv}->recv;
+
+Starts C<@command> and prints each line of its output through C<print_ts>,
+with the label C<E<gt>> for stdout and C<2E<gt>> for stderr. Dies without a
+command.
+
+Returns a hashref with C<cv> (sent the exit code when the command ended),
+C<proc>, C<hout> and C<herr> (the process and the two pipe handles). Once the
+command ended it also holds C<exit_code> and, if a signal ended it, C<signal>.
+
+The caller must keep the returned hashref alive, for example in a lexical
+variable that stays in scope while the event loop runs: the process and the
+pipe handles live in it, and the command dies with the hashref.
+
+=cut
 
 1;
 

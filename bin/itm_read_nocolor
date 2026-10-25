@@ -22,14 +22,14 @@ my $handle = AnyEvent::ITM->handle($file, sub {
   while ((my $lf = index($buf, "\n")) != -1) {
     my $line = substr($buf, 0, $lf);
     $line =~ s/\r$//;               # strip CR in CRLF
-    AnyEvent::ITM::_print_ts('>',$line);
+    AnyEvent::ITM::print_ts('>',$line);
     substr($buf, 0, $lf+1) = '';    # drop emitted + newline
   }
 }, $cv);
 
 $cv->cb(sub {
   my $cv = shift;
-  AnyEvent::ITM::_print_ts('>',$buf) if length $buf;   # flush trailing partial line
+  AnyEvent::ITM::print_ts('>',$buf) if length $buf;   # flush trailing partial line
   $buf = '';
   warn $cv->recv;
 });
@@ -37,7 +37,7 @@ $cv->cb(sub {
 my $cmd;
 
 if (scalar @ARGV > 0) {
-  $cmd = AnyEvent::ITM->_run_cmd(@ARGV);
+  $cmd = AnyEvent::ITM->run_cmd(@ARGV);
 }
 
 warn $cv->recv;

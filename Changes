@@ -5,3 +5,7 @@
     without Term::ANSIColor installed
   - bin/itm_read_simple POD no longer promises colored output
   - t/scripts.t runs both shipped readers over the same packet stream
+  - AnyEvent::ITM::_print_ts and AnyEvent::ITM->_run_cmd are now the
+    public, documented print_ts and run_cmd; both shipped readers use the
+    new names, the old underscore names are gone
+  - t/run_cmd.t checks the exit code and signal that run_cmd reports

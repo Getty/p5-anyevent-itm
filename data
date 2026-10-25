@@ -1,0 +1,47 @@
+---
+claimed_at: 2026-10-25T06:00:35Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:35Z
+created: 2026-10-21T02:29:48Z
+id: 5
+priority: medium
+started: 2026-10-25T05:50:48Z
+status: done
+tags:
+- bug
+- quality
+title: Toter Code im Leser, unerreichbares croak, und die statt croak im Fehlerpfad
+updated: 2026-10-25T06:00:35Z
+---
+
+Vier Befunde im Modul lib/AnyEvent/ITM.pm, alle in der Lese- und Fehlerpfad-Umgebung:
+
+  1) Toter Code im Leser: die Laengenberechnung des Payloads wird berechnet und
+     nie benutzt, ebenso der Wert des ersten Bytes. Beide Zeilen koennen weg.
+
+  2) Unerreichbarer Fehlerpfad: das croak mit dem Text 'unknown packet type' kann
+     nicht erreichen - die Header-Funktion der ITM-Dist liefert nie undef. Der
+     Zweig bleibt als Falle stehen und behauptet eine Sicherheitspruefung, die es
+     nicht gibt.
+
+  3) die statt croak: in handle() bricht der Sysopen mit 'sysopen DATEI: FEHLER'
+     ab, in _run_cmd() mit 'run_cmd: no command'. Die Hausregel verlangt croak -
+     der Aufrufer soll die Dateibezeichnung und den Aufrufpfad sehen.
+
+  4) Leerer Buffer wird als Overflow-Paket gelesen: der erste Byte-Zugriff auf
+     einen leeren Buffer liefert den leeren String, die Header-Funktion warnt dreimal
+     ueber uninitialisierte Werte und landet im Overflow-Zweig. Der Leser meldet
+     damit ein Paket, das es nicht gibt. Der Leser muss einen leeren Buffer als
+     'noch nichts da' behandeln und 0 liefern, ohne zu warnen.
+
+Zusaetzlich, kleiner Befund: der Dateiparameter von handle() wird mit einer
+logischen Oder-Verknuepfung auf seinen Wahrheitswert geprueft - eine Datei, die
+genau '0' heisst, wird abgelehnt.
+
+Test: fuer Punkt 4 ein Test, der zuerst rot ist: ein leerer Buffer muss zurueckgeben
+0 und keine Warnung erzeugen.
+
+2026-10-25 05:52 Done: reader drops $len/$f and the unreachable croak (measured: itm_header returns defined for all 256 bytes), empty/undef rbuf returns 0 without warning, handle()/run_cmd croak with caller location. t/reader.t (17 tests) red vs old lib on 3 (warning, 2x caller location), green now; suite 79 tests green. Also found: the 'file 0' defect was not in handle() (no truthiness check there, '0' opened fine before) but in both bins (my $file = shift or die usage) - fixed there with defined, 4 new tests in t/scripts.t red vs old bins. Bins still use die for the usage message (script, left as is).
+
+2026-10-25 05:52 Committed as d7e6d5a

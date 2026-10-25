@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+  - the distribution builds with dzil build: LICENSE is committed, and
+    README.md describes the module and both readers
+  - the cpanfile pins AnyEvent (7.17) and ITM (0.002) to real minimum
+    versions and declares Carp and Fcntl; PAR::Packer, which bundle.bat
+    calls, is a develop dependency
+  - t/cpanfile.t checks the declared dependencies and that nothing is
+    pinned to 0
   - bin/itm_read_simple no longer imports Term::ANSIColor and drops its
     unused color list; it now behaves like itm_read_nocolor and starts
     without Term::ANSIColor installed

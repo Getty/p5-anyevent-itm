@@ -1,6 +1,8 @@
 package AnyEvent::ITM;
 # ABSTRACT: Debug ITM/SWD stream deserializer for AnyEvent
 
+our $VERSION = '0.002';
+
 use strict;
 use warnings;
 use bytes;
@@ -201,18 +203,3 @@ or without $cv, it will start its own and does $cv->recv on its own.
 =head1 DESCRIPTION
 
 Process ITM/SWO Debugging data.
-
-=head1 SUPPORT
-
-IRC
-
-  Join #hardware on irc.perl.org. Highlight Getty for fast reaction :).
-
-Repository
-
-  http://github.com/Getty/p5-anyevent-itm
-  Pull request and additional contributors are welcome
- 
-Issue Tracker
-
-  http://github.com/Getty/p5-anyevent-itm/issues

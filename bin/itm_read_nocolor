@@ -2,6 +2,8 @@
 # PODNAME: itm_read_nocolor
 # ABSTRACT: Simple ITM Reader (No Color)
 
+our $VERSION = '0.002';
+
 use strict;
 use warnings;
 use AnyEvent;
@@ -64,16 +66,5 @@ Best is to make a fifo for the exchange (more stable)
 =head1 DESCRIPTION
 
 Displays ITM/SWO Debugging data.
-
-=head1 SUPPORT
-
-Repository
-
-  https://github.com/Getty/p5-anyevent-itm
-  Pull request and additional contributors are welcome
- 
-Issue Tracker
-
-  https://github.com/Getty/p5-anyevent-itm/issues
 
 =cut

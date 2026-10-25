@@ -1,0 +1,46 @@
+---
+claimed_at: 2026-10-25T06:00:39Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:39Z
+created: 2026-10-21T02:30:01Z
+id: 6
+priority: medium
+started: 2026-10-25T05:54:45Z
+status: done
+tags:
+- ci
+- tests
+title: 'Keine CI und keine Autorentests: handle(), _run_cmd() und beide Skripte sind
+  ungetestet'
+updated: 2026-10-25T06:00:39Z
+---
+
+Der letzte Commit hat die Travis-Konfiguration entfernt - die Dist hat damit keine CI mehr, und es gibt kein Verzeichnis xt/ mit Autorentests (kein perlcritic, keine POD-Abdeckung, kein Test der ausgelieferten Skripte).
+
+Was die Suite heute deckt:
+  t/load.t  - laedt das Modul
+  t/simple.t - neun Pakete durch eine echte Pipe ueber den itm-Lesetyp
+
+Ungetestet ist der Rest des oeffentlichen Angebots:
+  - handle() auf einer echten Datei (die Dateimodi fuer Pipe, Zeichengeraet und
+    regulaere Datei, das EOF-Signal, das Fehlersignal)
+  - _run_cmd() (Exit-Code, Signal, Zeitstempel-Ausgabe)
+  - _print_ts() (Zeitstempelformat, Zielstream je nach Kennzeichen)
+  - beide ausgelieferten Skripte (Zeilenausgabe, Zurueckschreiben des Restes am EOF)
+
+Vorschlag:
+  a) Ein Workflow in der Actions-CI des Repos, der die Suite auf jedem Push laufen
+     laesst - mindestens auf Linux mit dem juengsten stabilen Perl.
+  b) Ein Verzeichnis xt/ mit Autorentests: perlcritic ueber lib/ und bin/,
+     eine POD-Abdeckungspruefung, und ein Test, der die beiden Skripte wirklich
+     startet und ihre Ausgabe prueft.
+  c) Tests fuer handle() und _run_cmd() in t/ - sie sind Vertragsverhalten, nicht
+     Beiwerk.
+
+Ziel: nach dieser Karte laeuft ein gruener Lauf in der CI, der auch die ausgelieferten
+Programme ausfuehrt.
+
+2026-10-25 05:57 k6 worker: .github/workflows/ci.yml (prove t/ and xt/), xt/perlcritic.t (severity 5, RequireUseStrict excluded: strict sits below the per-file our $VERSION), xt/pod.t (own =method check; podchecker/Test::Pod/Test::Pod::Coverage reject =method), t/handle.t (16 tests, characterization, green on old lib too; mutations pipe->RDONLY and EOF->END red; O_NONBLOCK check is vacuous because AnyEvent::Handle sets it itself, O_NOCTTY not observable via F_GETFL). Measured: error signal is '1: Is a directory' (fatal=1); missing file croaks, no cv message. Added =method handle POD to lib (was undocumented). cpanfile develop: Perl::Critic, Test::Perl::Critic; t/cpanfile.t extended. Not duplicated: scripts/run_cmd/print_ts covered by t/scripts.t, t/run_cmd.t. Card names _run_cmd/_print_ts are now run_cmd/print_ts.
+
+2026-10-25 05:58 Committed as 7d6ee55

@@ -9,6 +9,10 @@ use File::Spec;
 # distribution being tested); it exists to check the test against old trees.
 my $root = $ENV{ANYEVENT_ITM_ROOT} || '.';
 
+# Checks the source as written; the built dist carries generated POD.
+plan skip_all => 'source tree only'
+  unless $ENV{ANYEVENT_ITM_ROOT} || -e File::Spec->catfile($root, '.git');
+
 my @files;
 for my $dir (qw( lib bin )) {
   my $path = File::Spec->catdir($root, $dir);

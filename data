@@ -1,0 +1,38 @@
+---
+claimed_at: 2026-10-25T06:00:15Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:15Z
+created: 2026-10-21T02:28:08Z
+id: 1
+priority: high
+started: 2026-10-25T05:42:03Z
+status: done
+tags:
+- bug
+- bin
+title: itm_read_simple ist eine Kopie von itm_read_nocolor mit totem Farbcode
+updated: 2026-10-25T06:00:15Z
+---
+
+bin/itm_read_simple ist bis auf den Farbblock eine Kopie von bin/itm_read_nocolor. Der Farbblock ist toter Code: use Term::ANSIColor qw( colored ); (Zeile 10) wird nie benutzt, und our @colors (Zeilen 14-47, 32 Eintraege) wird nirgends gelesen. Die datei faerbt nichts, obwohl ihr POD 'Displays ITM/SWO Debugging data in colored form' sagt.
+
+Der Import hat zusaetzlich eine Nebenwirkung: er bricht das Skript zur Compile-Zeit ab, wenn Term::ANSIColor auf der Maschine fehlt - und Term::ANSIColor steht in keiner Abhaengigkeitsliste der Dist.
+
+Beleg:
+  diff bin/itm_read_simple bin/itm_read_nocolor
+  -> einziger inhaltlicher Unterschied: der Import und die Farbliste
+
+Ziel: eine von zwei klaren Entscheidungen, keine Mischlage.
+  a) Die Farbausgabe wird echt implementiert: die Farbliste wird benutzt, die Ausgabe farbig, das POD bleibt, und Term::ANSIColor kommt ins cpanfile.
+  b) Der tote Block fliegt raus, das Skript verhaelt sich wie itm_read_nocolor, das POD wird angepasst, und der Import entfaellt.
+
+Ein dritter Weg - toter Import behalten - ist keine Option, weil er eine undokumentierte Abhaengigkeit erzeugt.
+
+Test: ein Test, der beide Skripte mit denselben ITM-Paketen laufen laesst und die Ausgabe prueft. Wenn b) gewaehlt wird, muss der Test belegen, dass das Skript ohne Term::ANSIColor startet.
+
+2026-10-25 05:43 Variant b done: removed Term::ANSIColor import + @colors from bin/itm_read_simple, POD 'colored form' -> 'data'. New t/scripts.t (both scripts, same stream, @INC hook forbidding Term/ANSIColor.pm; env ITM_TEST_READ_SIMPLE/_NOCOLOR override script paths). Red against HEAD version (hook die, exit 255, no output), green now; prove -lr t/ 39 tests pass. Changes created. Also found: bin/itm_read_nocolor POD synopsis repeats 'openocd.itmlog' twice in the command example (typo); SUPPORT blocks hand-written and no VERSION in both scripts (known). Not handed to review.
+
+2026-10-25 05:44 Committed as 1aeb9a0 on offen-2610
+
+Also found: openocd.itmlog doppelt im POD-Beispiel von itm_read_nocolor; CLAUDE.md/anyevent-itm-core/Worker-Agent nennen noch _print_ts/_run_cmd; podchecker kennt =method nicht (Bundle-Shortcut); perlcritic unter Stufe 5 meldet RequireFinalReturn/ProhibitNullStatements in print_ts; dist.ini author ist torsten@raudss.us (Karte nennt andere Adresse); AnyEvent-Pin 7.17 = installierte Version, Mindestversion nicht gemessen.

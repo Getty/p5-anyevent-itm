@@ -12,7 +12,8 @@ use AnyEvent::ITM;
 
 $|=1;
 
-my $file = shift or die qq{usage: $0 filename [command]};
+my $file = shift;
+die qq{usage: $0 filename [command]} unless defined $file;
 my $buf = '';
 my $cv = AE::cv;
 my $handle = AnyEvent::ITM->handle($file, sub {

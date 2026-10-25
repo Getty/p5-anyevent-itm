@@ -17,23 +17,15 @@ use AnyEvent::Util qw(portable_pipe);
 AnyEvent::Handle::register_read_type(itm => sub {
   my ( $self, $cb ) = @_;
   sub {
-    if (defined $_[0]{rbuf}) {
-      my $first = substr($_[0]{rbuf},0,1);
-      my $len = length($_[0]{rbuf});
-      my $f = ord($first);
-      my $header = itm_header($first);
-      if ($header) {
-        my $size = $header->{size} ? $header->{size} : 0;
-        my $payload = substr($_[0]{rbuf},1,$size);
-        if (defined $payload && length($payload) == $size) {
-          my $itm = itm_parse($header,$size ? ($payload) : ());
-          $_[0]{rbuf} = substr($_[0]{rbuf},$size + 1);
-          $cb->( $_[0], $itm );
-          return 1;          
-        }
-        return 0;
-      } else {
-        croak sprintf("unknown packet type");
+    if (defined $_[0]{rbuf} && length $_[0]{rbuf}) {
+      my $header = itm_header(substr($_[0]{rbuf},0,1));
+      my $size = $header->{size} ? $header->{size} : 0;
+      my $payload = substr($_[0]{rbuf},1,$size);
+      if (defined $payload && length($payload) == $size) {
+        my $itm = itm_parse($header,$size ? ($payload) : ());
+        $_[0]{rbuf} = substr($_[0]{rbuf},$size + 1);
+        $cb->( $_[0], $itm );
+        return 1;
       }
     }
     return 0;
@@ -83,7 +75,7 @@ sub handle {
     $flags |= O_NOCTTY if -c $file;
   }
 
-  sysopen(my $fh, $file, $flags) or die "sysopen $file: $!";
+  sysopen(my $fh, $file, $flags) or croak "sysopen $file: $!";
   binmode($fh, ':raw');
 
   my $handle = AnyEvent::Handle->new(
@@ -111,7 +103,7 @@ sub handle {
 
 sub run_cmd {
   my ($class, @cmd) = @_;
-  die "run_cmd: no command" unless @cmd;
+  croak "run_cmd: no command" unless @cmd;
 
   my ($out_r, $out_w) = portable_pipe;
   my ($err_r, $err_w) = portable_pipe;
@@ -170,7 +162,7 @@ sub run_cmd {
   my $exit_code = $cmd->{cv}->recv;
 
 Starts C<@command> and prints each line of its output through C<print_ts>,
-with the label C<E<gt>> for stdout and C<2E<gt>> for stderr. Dies without a
+with the label C<E<gt>> for stdout and C<2E<gt>> for stderr. Croaks without a
 command.
 
 Returns a hashref with C<cv> (sent the exit code when the command ended),

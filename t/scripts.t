@@ -56,4 +56,22 @@ for my $name ( sort keys %script ) {
   unlike( $stderr, qr/Term::ANSIColor|Can't locate/, $name.': no load failure' );
 }
 
+# a file named 0 is a file, not a missing argument
+{
+  use Cwd qw( abs_path );
+  my $lib = abs_path('lib');
+  for my $name ( sort keys %script ) {
+    my $abs = abs_path( $script{$name} );
+    my $zero = tempdir( CLEANUP => 1 );
+    open my $zfh, '>:raw', "$zero/0" or die "write $zero/0: $!";
+    print $zfh "\x02hi\x01\n";
+    close $zfh;
+    my $out = "$zero.out";
+    my $rc = system "cd '$zero' && '$^X' '-I$lib' '$abs' 0 >'$out' 2>'$out.err'";
+    is( $rc, 0, $name.': accepts a file named 0' );
+    my $text = do { open my $o, '<', $out or die $!; local $/; <$o> };
+    like( $text, qr/\A$ts > hi\n\z/, $name.': file named 0 is read' );
+  }
+}
+
 done_testing;

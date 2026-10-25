@@ -16,3 +16,12 @@
     now set through irc in dist.ini
   - t/version.t checks the $VERSION of every file under lib/ and bin/ and
     that no POD carries a SUPPORT section
+  - the itm read type treats an empty buffer as "nothing there yet" and
+    returns 0 instead of warning and reporting an overflow packet; the dead
+    length and byte values and the unreachable "unknown packet type" croak
+    are gone from the reader
+  - handle() and run_cmd() croak instead of die, so the message names the
+    caller's file and line
+  - itm_read_simple and itm_read_nocolor accept a file named 0
+  - t/reader.t pins the framing rules (empty buffer, partial packet, one
+    packet per read), the croak locations and a file named 0

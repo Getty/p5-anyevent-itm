@@ -1,0 +1,34 @@
+---
+claimed_at: 2026-10-25T06:00:25Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:25Z
+created: 2026-10-21T02:29:21Z
+id: 3
+priority: medium
+started: 2026-10-25T05:49:12Z
+status: done
+tags:
+- packaging
+- conventions
+title: Kein Modul und kein Skript traegt eine eigene Versionsangabe, drei handgeschriebene
+  SUPPORT-Abschnitte
+updated: 2026-10-25T06:00:25Z
+---
+
+Drei Dateien dieser Dist tragen keine eigene Versionsangabe: lib/AnyEvent/ITM.pm, bin/itm_read_simple und bin/itm_read_nocolor. Die Hausregel ist: jede Datei unter lib/ und bin/ deklariert ihre Version selbst (our mit Dollarzeichen vor VERSION), und alle drei tragen dieselbe Nummer - die naechste, noch nicht veroeffentlichte.
+
+Zweitens: das Modul und beide Skripte haben einen handgeschriebenen SUPPORT-Abschnitt im POD. Das Release-Bundle erzeugt diesen Abschnitt selbst; ein handgeschriebener kollidiert damit. Der SUPPORT-Block nennt den Kanal #hardware - der steht in dist.ini als fehlende Option.
+
+Drittens: dist.ini hat keine irc-Option, das Bundle erzeugt also einen SUPPORT-Abschnitt ohne Kanal.
+
+Arbeit:
+  a) Die Versionsangabe in allen drei Dateien ergaenzen (gleiche Nummer, naechste noch nicht veroeffentlichte).
+  b) Die handgeschriebenen SUPPORT-Abschnitte aus dem POD entfernen.
+  c) In dist.ini die Option irc = #hardware ergaenzen, damit der erzeugte Abschnitt den Kanal nennt.
+
+Achtung: die Versionsnummer wird nicht aus CPAN zurueckgelesen. Es ist die naechste noch nicht veroeffentlichte Nummer, die der Release-Manager festlegt.
+
+2026-10-25 05:49 Entscheidung: $VERSION = '0.002' in lib/AnyEvent/ITM.pm, bin/itm_read_simple, bin/itm_read_nocolor. Begruendung: letzter CPAN-Release ist 0.001, 0.002 ist die naechste unveroeffentlichte Nummer (Vorgabe des Dispatchers). Erledigt: SUPPORT-Abschnitte aus allen drei POD entfernt, dist.ini irc = #hardware, neuer t/version.t (git add), Changes unter {{$NEXT}}. Rot gegen alten Stand (HEAD-Dateien via ANYEVENT_ITM_ROOT): 7 von 8 Tests rot; gruen: prove -lr t/ 5 Dateien, 58 Tests; perl -c beider Skripte ok. Also found: podchecker meldet '=method' in lib/AnyEvent/ITM.pm als unbekannt (nur Bundle-Shortcut, erwartet, kein Defekt); kein dzil build geprueft (LICENSE fehlt weiterhin).
+
+2026-10-25 05:50 Committed as f0cc254

@@ -32,3 +32,9 @@
   - itm_read_simple and itm_read_nocolor accept a file named 0
   - t/reader.t pins the framing rules (empty buffer, partial packet, one
     packet per read), the croak locations and a file named 0
+  - GitHub Actions CI runs the suite and the author tests on Linux with
+    the newest stable Perl; xt/ holds a perlcritic test (severity 5) and
+    a POD coverage test that understands the =method shortcut
+  - handle() is documented, and t/handle.t pins its file modes (pipe
+    read-write, otherwise read-only, non-blocking), the EOF signal and the
+    "$fatal: $message" error signal

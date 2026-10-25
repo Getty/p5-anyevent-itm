@@ -27,6 +27,8 @@ for my $module (qw( AnyEvent Carp Fcntl ITM )) {
 ok(exists $phase{test}{'Test::More'}, 'Test::More is declared for test');
 ok(exists $phase{develop}{'PAR::Packer'}, 'PAR::Packer (bundle.bat) is declared for develop');
 
+ok(exists $phase{develop}{'Perl::Critic'}, 'Perl::Critic (xt/perlcritic.t) is declared for develop');
+ok(exists $phase{develop}{'Test::Perl::Critic'}, 'Test::Perl::Critic (xt/perlcritic.t) is declared for develop');
 for my $p (sort keys %phase) {
   for my $module (sort keys %{$phase{$p}}) {
     my $v = $phase{$p}{$module};

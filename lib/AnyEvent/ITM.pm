@@ -101,6 +101,22 @@ sub handle {
   return $handle;
 }
 
+=method handle
+
+  my $handle = AnyEvent::ITM->handle($file, sub { my ( $handle, $itm ) = @_; ... }, $cv);
+
+Opens C<$file> non-blocking and calls the callback with C<($handle, $itm)>
+for every packet read from it. A pipe is opened read-write, so it stays open
+when the writer goes away; a character device is opened without a
+controlling terminal; anything else is opened read-only. Croaks when the file
+cannot be opened.
+
+The optional C<$cv> receives C<EOF> at the end of the file and
+C<"$fatal: $message"> on a read error; the handle is destroyed in both
+cases. Without C<$cv> the method waits for one of them before it returns.
+
+=cut
+
 sub run_cmd {
   my ($class, @cmd) = @_;
   croak "run_cmd: no command" unless @cmd;

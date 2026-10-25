@@ -9,4 +9,6 @@ on test => sub {
 
 on develop => sub {
   requires 'PAR::Packer';
+  requires 'Perl::Critic';
+  requires 'Test::Perl::Critic';
 };

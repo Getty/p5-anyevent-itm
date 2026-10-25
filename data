@@ -1,0 +1,36 @@
+---
+claimed_at: 2026-10-25T06:00:20Z
+claimed_by: offen-2610
+class: standard
+completed: 2026-10-25T06:00:20Z
+created: 2026-10-21T02:28:19Z
+id: 2
+priority: high
+started: 2026-10-25T05:44:32Z
+status: done
+tags:
+- api
+- bin
+title: Die Binaries rufen private Funktionen einer fremden Klasse auf
+updated: 2026-10-25T06:00:20Z
+---
+
+Beide ausgelieferten Skripte greifen auf interne Funktionen der Modulklasse zu, die mit einem Unterstrich als privat markiert sind:
+
+  bin/itm_read_simple Zeile 61 und Zeile 68: AnyEvent::ITM::_print_ts('>', Zeile)
+  bin/itm_read_nocolor Zeile 25 und Zeile 32: AnyEvent::ITM::_print_ts('>', Zeile)
+  bin/itm_read_simple Zeile 76 und bin/itm_read_nocolor Zeile 40: AnyEvent::ITM->_run_cmd(@ARGV)
+
+Der Unterstrich sagt: das ist kein oeffentlicher Vertrag. Trotzdem haengt die Auslieferung davon ab - zwei Programme im bin-Verzeichnis, die ohne diese Aufrufe nichts ausgeben.
+
+Ziel: eine der beiden sauberen Loesungen.
+  a) Die Funktionen bekommen oeffentliche Namen (print_ts, run_cmd), werden im POD dokumentiert und werden Teil des Vertrags der Dist.
+  b) Die Logik wandert in die Skripte, das Modul bietet nur das oeffentliche handle() an.
+
+Zusaetzlich zu beachten: run_cmd liefert einen Hashref, dessen Werte (cv, proc, hout, herr) nur lebendig bleiben, solange der Hashref im Skript steht. Die Skripte halten ihn in einer lexikalen Variablen - eine Umstellung muss das erhalten, sonst stirbt der Kindprozess sofort.
+
+Test: ein Test, der den Rueckgabewert von run_cmd prueft (Exit-Code und Signal bei einem Kommando, das mit einem Signal endet).
+
+2026-10-25 05:48 Done (variant a): print_ts/run_cmd public, POD via =method, both scripts switched, no aliases. Gotcha: AnyEvent::Util::run_cmd was imported into the package and clashed with the new name (deep recursion); import dropped, call fully qualified. Test t/run_cmd.t (11 tests); red against old lib at test 2 (print_ts missing, run_cmd is AnyEvent::Util's, no cv). Old run_cmd logic already reported exit_code/signal correctly, so the behavior assertions are only red through the missing API. Also found: run_cmd still uses die not croak (POD says 'Dies'); skill anyevent-itm-core, CLAUDE.md and the worker agent still name the underscore functions; SUPPORT in ITM.pm still hand-written.
+
+2026-10-25 05:48 Committed as 7ebe70a

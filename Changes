@@ -1,0 +1,7 @@
+{{$NEXT}}
+
+  - bin/itm_read_simple no longer imports Term::ANSIColor and drops its
+    unused color list; it now behaves like itm_read_nocolor and starts
+    without Term::ANSIColor installed
+  - bin/itm_read_simple POD no longer promises colored output
+  - t/scripts.t runs both shipped readers over the same packet stream

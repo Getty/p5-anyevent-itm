@@ -1,22 +1,29 @@
-name: CI
-
+# CI for a pure-Perl [@Author::GETTY] distribution: the Dist::Zilla mechanics
+# live in the shared dzil-test action of the bundle repository.
+name: ci
 on:
   push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
   pull_request:
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version:
+          - '5.36'
+          - '5.38'
+          - '5.40'
+    container:
+      image: perl:${{ matrix.perl-version }}-bookworm
     steps:
       - uses: actions/checkout@v4
-      - uses: shogo82148/actions-setup-perl@v1
-        with:
-          perl-version: latest
-      - name: Install dependencies
-        run: cpanm --notest --installdeps .
-      - name: Install author test dependencies
-        run: cpanm --notest Perl::Critic Test::Perl::Critic
-      - name: Test suite
-        run: prove -lr t/
-      - name: Author tests
-        run: prove -lr xt/
+      - name: Fix safe.directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: perl -V
+        run: perl -V
+      - uses: Getty/p5-dist-zilla-pluginbundle-author-getty/.github/actions/dzil-test@v1

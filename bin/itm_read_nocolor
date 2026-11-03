@@ -2,7 +2,7 @@
 # PODNAME: itm_read_nocolor
 # ABSTRACT: Simple ITM Reader (No Color)
 
-our $VERSION = '0.002';
+our $VERSION = '0.101';
 
 use strict;
 use warnings;

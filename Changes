@@ -17,7 +17,7 @@
     new names, the old underscore names are gone
   - t/run_cmd.t checks the exit code and signal that run_cmd reports
   - lib/AnyEvent/ITM.pm, bin/itm_read_simple and bin/itm_read_nocolor
-    now declare their own $VERSION (0.002), all the same
+    now declare their own $VERSION (0.101), all the same
   - the hand-written SUPPORT sections are gone from the POD of all three
     files; the release bundle generates them, with the channel #hardware
     now set through irc in dist.ini

@@ -2,7 +2,7 @@
 # PODNAME: itm_read_simple
 # ABSTRACT: Simple ITM Reader
 
-our $VERSION = '0.002';
+our $VERSION = '0.101';
 
 use strict;
 use warnings;

@@ -1,7 +1,7 @@
 package AnyEvent::ITM;
 # ABSTRACT: Debug ITM/SWD stream deserializer for AnyEvent
 
-our $VERSION = '0.002';
+our $VERSION = '0.101';
 
 use strict;
 use warnings;

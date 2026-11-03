@@ -26,7 +26,7 @@ Behavior-relevant = `lib/`, the binaries, the reader. README and `Changes` wordi
 The name `itm` of the read type, the callback signature `($handle, $itm_object)`, the rule
 that a successful read consumes exactly one packet, the rule that a partial packet is never
 consumed, the non-blocking file modes of `handle()`, and the line output of the two shipped
-binaries. A change to any of them needs a `Changes` entry and a test.
+binaries (`print_ts` and `run_cmd` are public, documented functions they use). A change to any of them needs a `Changes` entry and a test.
 
 The wire format itself is **not** decoded here — that is the `ITM` distribution, the
 sibling repository `p5-itm`. A defect in the decoding goes on that repository's board. Full

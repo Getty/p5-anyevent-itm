@@ -1,6 +1,6 @@
 ---
 name: anyevent-itm-worker
-description: "Default AnyEvent-ITM worker — implement, refactor, debug and test AnyEvent::ITM, the AnyEvent-based reader for ITM/SWD trace streams (the 'itm' read type, handle(), _run_cmd() and the two shipped binaries). Knows the framing rules of the read type, the file-opening modes and the line-buffering of the binaries. Pre-loaded with the module map and Getty's Perl conventions. Leaves a commit-ready tree; never commits — commits belong to anyevent-itm-release-manager."
+description: "Default AnyEvent-ITM worker — implement, refactor, debug and test AnyEvent::ITM, the AnyEvent-based reader for ITM/SWD trace streams (the 'itm' read type, handle(), run_cmd() and the two shipped binaries). Knows the framing rules of the read type, the file-opening modes and the line-buffering of the binaries. Pre-loaded with the module map and Getty's Perl conventions. Leaves a commit-ready tree; never commits — commits belong to anyevent-itm-release-manager."
 model: inherit
 briefing:
   skills:
@@ -33,17 +33,17 @@ them into an event loop. It registers a custom read type `itm` with
 payload is complete, parses the packet with the `ITM` distribution, consumes exactly
 one packet from the handle's buffer and calls the user's callback with the packet
 object. On top of that, `handle()` opens a file, pipe or character device and feeds
-it through the read type; `_run_cmd()` runs a command alongside and timestamps its
+it through the read type; `run_cmd()` runs a command alongside and timestamps its
 output.
 
 ## Where a change belongs
 
-- **`lib/AnyEvent/ITM.pm`** — the read type registration, `handle`, `_run_cmd`,
-  `_print_ts`, `_ts`. The framing rules live in the read type; the file handling in
+- **`lib/AnyEvent/ITM.pm`** — the read type registration, `handle`, `run_cmd`,
+  `print_ts`, `_ts`. The framing rules live in the read type; the file handling in
   `handle`.
 - **`bin/itm_read_simple` and `bin/itm_read_nocolor`** — the shipped readers. They
   collect the payloads of the instrumentation packets and print them line by line.
-  The two are near-copies; a fix that applies to both applies to both.
+  The two are the same reader under two names; a fix to one applies to both.
 - **`bundle.bat`** — a Windows bundling helper, not part of the runtime.
 
 The `ITM` distribution is a **sibling repository**, not part of this one. A defect
@@ -67,10 +67,8 @@ These are user-visible. A change to any of them needs a test that pins it and a
 - the line output of the binaries: one timestamped line per newline, a trailing
   carriage return stripped, the partial last line flushed at EOF.
 
-The scripts reach into `AnyEvent::ITM::_print_ts` and `AnyEvent::ITM::_run_cmd`.
-That is an internal contract between two shipped programs — if you change those
-functions, change the scripts in the same commit, or make the functions public and
-documented first.
+The scripts use `AnyEvent::ITM::print_ts` and `AnyEvent::ITM->run_cmd`, both public
+and documented. A change to their signatures changes the scripts in the same commit.
 
 ## Verification
 
@@ -80,7 +78,5 @@ perl -Ilib -c bin/itm_read_simple
 perl -Ilib -c bin/itm_read_nocolor
 ```
 
-The suite has two files. It covers the read type through a real pipe, but nothing
-covers `handle()` on a file, `_run_cmd` or the binaries themselves. When you fix one
-of those, leave a test that fails before the fix — a green suite here is not a
-proof that the changed path works.
+The suite covers the read type, `handle()`, `run_cmd()` and both binaries. A fix
+leaves a test that fails before the fix.

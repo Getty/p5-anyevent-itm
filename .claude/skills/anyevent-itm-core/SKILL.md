@@ -1,6 +1,6 @@
 ---
 name: anyevent-itm-core
-description: "Load before editing AnyEvent-ITM — the AnyEvent-based reader for ITM/SWD trace streams: module map, the custom 'itm' read type and its framing rules, the handle() and _run_cmd() entry points, the two shipped binaries, and the rough edges of this repository."
+description: "Load before editing AnyEvent-ITM — the AnyEvent-based reader for ITM/SWD trace streams: module map, the custom 'itm' read type and its framing rules, the handle() and run_cmd() entry points, the two shipped binaries, and the rough edges of this repository."
 ---
 
 # AnyEvent::ITM — core
@@ -12,15 +12,15 @@ exactly two things: a custom AnyEvent read type that frames packets out of a byt
 stream, and the plumbing to read that stream from a file, a pipe or a character
 device, optionally alongside a running command whose output is timestamped.
 
-One module, two scripts, two test files. No Moo, no object hierarchy.
+One module, two scripts. No Moo, no object hierarchy.
 
 | File | Role |
 |---|---|
-| `lib/AnyEvent/ITM.pm` | the module: the `itm` read type, `handle`, `_run_cmd`, `_print_ts`, `_ts` |
+| `lib/AnyEvent/ITM.pm` | the module: the `itm` read type, `handle`, `run_cmd`, `print_ts`, `_ts` |
 | `bin/itm_read_simple` | the reader script — prints instrumentation payloads as timestamped lines |
-| `bin/itm_read_nocolor` | the same script without the color leftovers |
-| `t/load.t` | the module loads |
-| `t/simple.t` | nine packets through a real pipe, via the `itm` read type |
+| `bin/itm_read_nocolor` | the same reader under its second name |
+| `t/` | `load.t`, `simple.t`, `reader.t` (read type), `handle.t`, `run_cmd.t`, `scripts.t` (binaries), `version.t`, `cpanfile.t` |
+| `xt/` | `perlcritic.t`, `pod.t` (author tests) |
 | `bundle.bat` | a Windows bundling script (PAR::Packer) |
 
 ## The `itm` read type
@@ -69,20 +69,20 @@ blocks on `recv` before returning the handle — the caller then only receives
 packets through the callback. With a `$cv` the method returns immediately and the
 caller waits itself.
 
-## `_run_cmd(@cmd)`
+## `run_cmd(@cmd)`
 
 Starts a command and reads its output. It opens two portable pipes, one for stdout
 and one for stderr, and starts the command with `AnyEvent::Util::run_cmd`. Each
-line that arrives is printed through `_print_ts` with the prefix `>` for stdout and
+line that arrives is printed through `print_ts` with the prefix `>` for stdout and
 `2>` for stderr. The returned hashref holds the condition variable (`cv`), the
 process handle (`proc`), the two pipe handles (`hout`, `herr`) and — once the
 process ended — `exit_code` and, if the process was killed by a signal, `signal`.
 
 The hashref must stay in scope: the process and the pipe handles live in it.
 
-## `_print_ts($label, $line)` and `_ts()`
+## `print_ts($label, $line)` and `_ts()`
 
-`_ts` returns the local time as `YYYY-MM-DD HH:MM:SS`. `_print_ts` prefixes a line
+`_ts` (internal) returns the local time as `YYYY-MM-DD HH:MM:SS`. `print_ts` (public, a plain function) prefixes a line
 with that timestamp and the label, and prints to STDERR for the label `2>`, to STDOUT
 for everything else.
 
@@ -91,12 +91,11 @@ for everything else.
 Both scripts do the same thing: open the file with `AnyEvent::ITM->handle`, collect
 the payloads of the instrumentation packets, and print them line by line — a
 timestamped line per newline, with a trailing `\r` stripped, and the remaining
-partial line flushed at EOF. They differ only in the color leftovers described
-below.
+partial line flushed at EOF. They differ only in name and POD.
 
-The scripts compare the class of the packet with `ref($itm) eq 'ITM::Instrumentation'`
-rather than asking the packet for its type. That is a workaround: the `type` method
-of the `ITM` distribution currently dies on every packet class.
+The scripts recognise instrumentation packets by comparing `ref($itm)` with
+`'ITM::Instrumentation'`. They use `AnyEvent::ITM::print_ts` and
+`AnyEvent::ITM->run_cmd`.
 
 ## Vocabulary
 
@@ -112,45 +111,16 @@ source port.
 
 ## Rough edges
 
-Real, in the tree, and not fixed:
-
-1. **`bin/itm_read_simple` is a copy of `bin/itm_read_nocolor` with dead color code.**
-   It imports `Term::ANSIColor` and declares a 32-entry `our @colors` list — neither
-   is ever used. The script colors nothing although its POD says "in colored form",
-   and the `Term::ANSIColor` import breaks the script at compile time on a machine
-   that does not have the module. It is not in the cpanfile.
-2. **The binaries reach into private functions of another module:**
-   `AnyEvent::ITM::_print_ts` and `AnyEvent::ITM::_run_cmd`. Two shipped programs
-   depend on internals that are free to change.
-3. **No `our $VERSION`** — not in `lib/AnyEvent/ITM.pm`, not in the two scripts.
-   The distribution ships versionless.
-4. **Hand-written SUPPORT sections** in the module and in both binaries. The release
-   bundle generates that section itself, and `dist.ini` has no `irc` option, so the
-   channel `#hardware` would be lost with the manual block.
-5. **Dead code in the reader:** `$len` and `$f` are computed and never used, and
-   `croak sprintf("unknown packet type")` is unreachable — `itm_header` never
-   returns `undef`.
-6. **`die` instead of `croak`** in `handle` (`sysopen $file: $!`) and in `_run_cmd`
-   (`run_cmd: no command`).
-7. **The cpanfile pins `'0'`** for `AnyEvent` and `ITM`, declares neither `Carp` nor
-   `Fcntl`, and does not declare `Term::ANSIColor` although a shipped script imports
-   it.
-8. **`bundle.bat` calls `pp`** (PAR::Packer) — declared nowhere: not in the cpanfile,
-   not in `dist.ini`.
-9. **No `Changes`, no `LICENSE`, no `README.md`** — `dzil build` aborts on the
-   missing `LICENSE`.
-10. **No CI and no `xt/`** — Travis was removed in the last commit; the author tests
-    only run locally.
-11. **An empty buffer is read as an overflow packet.** `substr($rbuf, 0, 1)` on an
-    empty buffer yields the empty string, `itm_header('')` warns about uninitialized
-    values and falls through to the overflow branch.
-12. **`my $file = shift or die`** refuses a file literally named `0`.
+1. **`bundle.bat` calls `pp`** (PAR::Packer), declared under `on develop` in the
+   cpanfile.
+2. **The binaries check their file argument with `defined`**, so a file named `0`
+   is accepted; `t/reader.t` pins it.
 
 ## Tests
 
-`t/` holds two files: `t/load.t` (the module loads) and `t/simple.t` (nine packets
-written into a pipe and read back through the `itm` read type — the real integration
-path). `prove -lr t/` runs the suite: 25 tests.
-
-Nothing tests `handle()` on a file, `_run_cmd`, `_print_ts` or either binary. A fix
-for any of the rough edges needs a test that fails before it.
+`prove -lr t/` runs the suite: `load.t`, `simple.t` and `reader.t` pin the read type
+(nine packets through a real pipe, empty buffer, partial packet, one packet per read),
+`handle.t` the file modes and the `EOF` / `"$fatal: $message"` signals, `run_cmd.t` the
+exit code and signal, `scripts.t` both binaries, `version.t` the `$VERSION` of every
+file under `lib/` and `bin/`, `cpanfile.t` the declared dependencies. `xt/` holds the
+perlcritic and POD coverage tests. A fix leaves a test that fails before it.

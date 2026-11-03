@@ -29,47 +29,32 @@ code goes back to the worker as a note on its card, not as your own fix. **Never
 `git push`, tag, or run `dzil release` — the maintainer's call every time.
 
 1. **`dist.ini`** — `[@Author::GETTY]` in use, `copyright_holder` and `copyright_year`
-   present. The repo's `$VERSION` is the *next unreleased* number — never copied back
-   from CPAN. `copyright_year` is `2015` today; it stays, and `LICENSE` must match
-   it. The bundle has no `irc` option, so the SUPPORT section it generates names no
-   channel — add `irc = #hardware`, which the hand-written SUPPORT blocks in the
-   module and in both binaries currently carry. The `author` line says
-   `torsten@raudss.us` while the newer dists of the fleet use `torsten@raudssus.de`;
-   check with the maintainer which address the CPAN account expects before a release
-   and do not change it silently.
+   present, `irc = #hardware` set. The repo's `$VERSION` is the *next unreleased*
+   number — never copied back from CPAN. `copyright_year` is `2015`; `LICENSE`
+   matches it. Which address the CPAN account expects in the `author` line is the
+   maintainer's call before a release; do not change it silently.
 
-2. **`cpanfile`** — every runtime dependency actually used is declared. The runtime
-   set is `AnyEvent` (that distribution also provides `AnyEvent::Handle` and
-   `AnyEvent::Util`), `ITM` (the sibling distribution that decodes the wire format),
-   `Carp` and `Fcntl`; `Test::More` belongs under `on test`. The current
-   `requires 'AnyEvent', '0'` and `requires 'ITM', '0'` pin nothing — the house rule
-   forbids `'0'`, and `ITM` can only be pinned once that distribution carries a
-   version of its own. `Term::ANSIColor` is imported by `bin/itm_read_simple` but not
-   declared — that import is dead code and belongs in the worker, not in the
-   cpanfile.
+2. **`cpanfile`** — every runtime dependency actually used is declared: `AnyEvent`
+   (that distribution also provides `AnyEvent::Handle` and `AnyEvent::Util`), `ITM`
+   (the sibling distribution that decodes the wire format), `Carp` and `Fcntl`, with
+   real minimum versions and no `'0'` pin; `Test::More` belongs under `on test`,
+   `PAR::Packer` (used by `bundle.bat`) and the perlcritic modules under
+   `on develop`.
 
-3. **`Changes`** — a `{{$NEXT}}` section exists and covers the user-visible changes
-   since the last release (`git log --oneline v0.001..`). Entries name the effect on
-   a caller (a fixed reader, a new option), not an internal refactor. The repo has
-   **no** `Changes` file today.
+3. **`Changes`** — a `{{$NEXT}}` section covers the user-visible changes since the
+   last release (`git log --oneline v0.001..`). Entries name the effect on a caller
+   (a fixed reader, a new option), not an internal refactor.
 
-4. **`LICENSE`** — committed, not generated at build time. `[@Author::GETTY]` aborts
-   the build when it is missing or no longer matches `license`, `copyright_holder`
-   and `copyright_year`. Run `dzil genlicense` and then stage the file explicitly —
-   that step is not optional, the bundle gathers through `Git::GatherDir` and sees
-   only tracked files. The repo has **no** `LICENSE` today, so `dzil build` aborts
-   with "no LICENSE in the distribution".
+4. **`LICENSE`** — committed and matching `license`, `copyright_holder` and
+   `copyright_year`. The bundle gathers through `Git::GatherDir` and sees only
+   tracked files, so a regenerated `dzil genlicense` file is staged explicitly.
 
-5. **Every file under `lib/` and `bin/` carries its own `our $VERSION`.** None of the
-   three files has one today — they ship versionless. The version is the next
-   unreleased number and is the same in all of them.
+5. **Every file under `lib/` and `bin/` carries its own `our $VERSION`**, the same
+   number in all of them; the bundle rewrites it at release.
 
 6. **`dzil build` and the suite** — the build runs clean: no missing files, no
-   warnings. `prove -lr t/` is green. The hand-written `=head1 SUPPORT` blocks in the
-   module and in both binaries must be gone — the bundle generates that section; a
-   hand-written one collides with it. `bundle.bat` calls `pp` (PAR::Packer), which is
-   declared nowhere; decide whether it stays a developer helper or goes into the
-   `on develop` section of the cpanfile.
+   warnings. `prove -lr t/` is green. The POD of the module and both binaries carries
+   no hand-written `=head1 SUPPORT`; the bundle generates that section.
 
 Report: ready, or a concise list of what blocks release. Report blockers back; the dispatching agent turns them into cards.
 

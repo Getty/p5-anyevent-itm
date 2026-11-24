@@ -60,7 +60,7 @@ the framing rules are in `.claude/rules/anyevent-itm-rules.md`.
 
 Only the release-manager commits; a worker leaves a commit-ready tree and a report.
 
-The agents carry their skills via `briefing.skills` (see `.claude/agents/`); the main
+The agents carry their skills via `skills:` (see `.claude/agents/`); the main
 agent delegates rather than loading them. The shared skills under `.claude/skills/`
 are **installed** from the Getty library by skilletor — they are not edited here.
 `anyevent-itm-core` is the one skill this repo owns: module map, the framing rules
